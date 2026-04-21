@@ -1,0 +1,9 @@
+model_list:
+  - model_name: /home/ubuntu/glm4_flash_int4
+    litellm_params:
+      model: openai//home/ubuntu/glm4_flash_int4
+      api_base: http://localhost:8000/v1
+      api_key: EMPTY
+
+litellm_settings:
+  drop_params: true
