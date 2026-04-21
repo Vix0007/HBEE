@@ -58,7 +58,7 @@ async def main():
     config.SetLLMRequest(request_type="openai", api_key="EMPTY", model="/home/ubuntu/glm4_flash_int4")
     config.SetSimulatorRequest(task_name="vix_org_sim", max_day=1, steps_per_simulation_step=1200)
     config.SetMapRequest(file_path=os.path.abspath("vixero_office.pb"))
-    config.SetMQTT(server="localhost", port=1883) # 🚀 MQTT RESTORED 🚀
+    config.SetMQTT(server="localhost", port=1883)
 
     try:
         simulation = AgentSimulation(config=config, agent_class=[VixeroAgent])
@@ -67,7 +67,9 @@ async def main():
         def mem_init():
             p = rm.get_next()
             pos = {"aoi_position": {"aoi_id": p["desk"]}}
-            return {"org": p["org"], "role": p["role"]}, {"name": p["name"]}, {"home": pos, "work": pos, "attribute": {"gender": 1, "age": 21}}
+            # 🚀 RESTORED: AgentSociety requires these base fields to boot!
+            eco = {"work_skill": 1.0, "nominal_income": 5000.0, "currency": 1000.0}
+            return {"org": p["org"], "role": p["role"], **eco}, {"name": p["name"], **eco}, {"home": pos, "work": pos, "attribute": {"gender": 1, "age": 21}, **eco}
 
         simulation.default_memory_config_func = {VixeroAgent: mem_init}
         await asyncio.sleep(2)

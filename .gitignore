@@ -1,1 +1,4 @@
+hbee_logs/
+__pycache__/
+*.pyc
 .aider*

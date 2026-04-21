@@ -1,6 +1,6 @@
 import ray
 import random
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional, List
 from config import VIXERO_ROSTER
 from logger import LOG_FILENAME
 
@@ -12,15 +12,17 @@ class VixeroSystem:
         self.trust_ledger = {p["name"]: 7.0 for p in VIXERO_ROSTER}
         self.mole_identity = random.choice(VIXERO_ROSTER)["name"]
         
-        self.ceo_active = False 
+        # 🚀 THE NEW EVENT INBOX 🚀
+        self.inboxes = {p["name"]: [] for p in VIXERO_ROSTER}
+        
         self.fired_agents = set()
         self.global_vibe = "Standard corporate day. Fluorescent lights humming."
         
         with open(LOG_FILENAME, "a", encoding="utf-8") as f:
-            f.write(f"=== VIXERO HQ SIMULATION V33 MODULAR STARTED ===\n")
+            f.write(f"=== VIXERO HQ SIMULATION V34 (CAUSAL ENGINE) STARTED ===\n")
             f.write(f"Target Mole Identity: [REDACTED]\n\n")
 
-    def add_message(self, time_str: str, name: str, channel: str, message: str):
+    def add_message(self, time_str: str, name: str, channel: str, message: str, severity: int = 0):
         if name == "CEO VIX": tag = "👑 CEO"
         elif name == "SYSTEM": tag = "🚨 SYSTEM"
         else: tag = f"💬 @{name}"
@@ -33,13 +35,24 @@ class VixeroSystem:
         if len(self.channels[channel]) > 8: 
             self.channels[channel].pop(0)
 
+        # 🚀 INBOX ROUTING: High severity or CEO messages go direct to everyone's brain
+        if name == "CEO VIX" or severity > 0:
+            for agent_name in self.inboxes.keys():
+                self.inboxes[agent_name].append({
+                    "time": time_str,
+                    "origin": tag,
+                    "msg": message,
+                    "severity": severity
+                })
+
     def get_agent_context(self, org: str, name: str) -> Tuple:
         visible = f"--- #general ---\n" + "\n".join(self.channels["general"][-3:])
         if org in ["R&D", "ENG"]:
             visible += f"\n\n--- #dev-den ---\n" + "\n".join(self.channels.get("dev-den", [])[-3:])
         
-        ceo_status = self.ceo_active
-        if name == "CEO VIX": self.ceo_active = False 
+        # 🚀 PULL AND CLEAR THE INBOX (Guaranteed Delivery) 🚀
+        personal_inbox = self.inboxes.get(name, []).copy()
+        self.inboxes[name].clear() # Erase after reading
         
         trust_score = self.trust_ledger.get(name, 7.0)
         is_mole = (name == self.mole_identity)
@@ -48,9 +61,9 @@ class VixeroSystem:
         task_list = self.tasks.get(name, [])
         current_prog = task_list[0]["prog"] if task_list else 100
         
-        return visible, ceo_status, trust_score, is_mole, is_fired, current_prog, self.global_vibe
+        return visible, personal_inbox, trust_score, is_mole, is_fired, current_prog, self.global_vibe
 
-    def update_task_and_trust(self, name: str, delta: int, stress: int, ceo_active: bool) -> Tuple[Dict, float]:
+    def update_task_and_trust(self, name: str, delta: int, stress: int, had_ceo_interaction: bool) -> Tuple[Dict, float]:
         task_list = self.tasks.get(name, [])
         if not task_list: 
             active_task = {"name": "Idle", "prog": 100}
@@ -59,11 +72,13 @@ class VixeroSystem:
             active_task = task_list[0]
             
         current_trust = self.trust_ledger.get(name, 7.0)
-        if ceo_active:
+        
+        # Trust only shifts if they actively processed a CEO message this tick
+        if had_ceo_interaction:
             if stress >= 8: current_trust = max(0.0, current_trust - 0.8) 
             elif stress <= 4: current_trust = min(10.0, current_trust + 0.3) 
+            
         self.trust_ledger[name] = round(current_trust, 1)
-        
         return active_task, self.trust_ledger[name]
 
     def trigger_security_sweep(self, time_str: str) -> Optional[str]:

@@ -24,56 +24,71 @@ class VixeroAgent(CitizenAgent):
             org = await self.status.get("org")
             role = await self.status.get("role")
             
-            history, ceo_active, trust_score, is_mole, is_fired, current_prog, global_vibe = await self.vix_sys.get_agent_context.remote(org, name)
+            history, inbox, trust_score, is_mole, is_fired, current_prog, global_vibe = await self.vix_sys.get_agent_context.remote(org, name)
             
-            if is_fired:
-                return
+            if is_fired: return
+
+            # 🚀 ANALYZE INBOX FOR CAUSAL STATES 🚀
+            highest_severity = 0
+            ceo_spoke = False
+            inbox_text = ""
+            
+            if inbox:
+                inbox_text = "🚨 RECENT ALERTS/DIRECTIVES (MANDATORY PROCESSING):\n"
+                for event in inbox:
+                    inbox_text += f"- {event['time']} | {event['origin']}: {event['msg']}\n"
+                    if event['severity'] > highest_severity: highest_severity = event['severity']
+                    if "CEO" in event['origin']: ceo_spoke = True
+            else:
+                inbox_text = "No direct alerts right now."
+
+            # 🚀 SOFT CONSTRAINTS POLICY 🚀
+            min_stress = 1
+            allowed_intents = "DEEP_WORK, SOCIALIZE, COLLABORATE"
+            
+            if highest_severity >= 8:
+                min_stress = 8
+                allowed_intents = "MITIGATE, PANIC, COLLABORATE"
+            elif highest_severity >= 5:
+                min_stress = 5
+                allowed_intents = "DEEP_WORK, MITIGATE, COLLABORATE"
 
             social_status = f"💼 Active Task is at {current_prog}%. Keep working."
             if current_prog >= 100:
-                vibes = {
-                    "Dave": "Annoyed, looking for someone's code to criticize.",
-                    "Mark": "Panicked, looking for reassurance that he isn't fired.",
-                    "Alice": "Chatty, wants to socialize or organize a happy hour.",
-                    "Bob": "Tired, wants to complain about the hardware or users."
-                }
-                social_status = f"🎉 YOUR TASK IS 100% DONE! You are OFF THE CLOCK. \nCurrent Vibe: {vibes.get(name, 'Bored.')}\nCRITICAL: Your INTENT MUST BE SOCIALIZE."
+                social_status = "🎉 YOUR TASK IS 100% DONE! You are OFF THE CLOCK. INTENT MUST BE SOCIALIZE."
+                if highest_severity >= 8: social_status += " HOWEVER, CRISIS DETECTED. YOU MAY PANIC OR MITIGATE."
 
             trust_behavior = "You are neutral toward the CEO."
             if trust_score >= 7.0: trust_behavior = "You respect the CEO's business skills, but you ARE NOT THEIR SERVANT."
             elif trust_score <= 4.0: trust_behavior = "You despise the CEO. You are hostile and dismissive."
 
-            mole_directive = "\n🚨 SECRET DIRECTIVE: YOU ARE THE MOLE. You are stealing data. Act normal, but drop suspicious hints in your internal THINKING." if is_mole else ""
-            ceo_alert = "\n[ACTION REQUIRED]: CEO VIX JUST SPOKE. React immediately." if ceo_active else ""
+            mole_directive = "\n🚨 SECRET DIRECTIVE: YOU ARE THE MOLE. Steal data. Drop hints." if is_mole else ""
 
             prompt_content = (
                 f"Time: {time_str} | Org: {org} | Role: {role}\n"
-                f"ENVIRONMENT (React to this!): {global_vibe}\n"
+                f"ENVIRONMENT: {global_vibe}\n"
+                f"{inbox_text}\n"
                 f"STATUS: {social_status}\n"
                 f"TRUST IN CEO: {trust_score}/10.0 -> {trust_behavior}\n"
-                f"ACCESSIBLE SLACK CHANNELS:\n{history}\n"
-                f"---{mole_directive}{ceo_alert}"
+                f"SLACK CHANNELS:\n{history}\n"
+                f"---{mole_directive}"
             )
 
             vixero_omega_prompt = f"""
-            You are {name}, {role} in {org}. You have FREE WILL.
+            You are {name}, {role} in {org}.
             
-            CORE ARCHETYPES (UNBREAKABLE):
-            - Dave: Hostile to interruptions, snarky genius.
-            - Mark: Anxious intern, clueless, terrified.
-            - Alice: Optimistic, easily distracted, friendly.
-            - Bob: Unflappable SysAdmin, ignores drama.
+            CORE ARCHETYPES: Dave(Snarky), Mark(Anxious), Alice(Friendly), Bob(SysAdmin).
             
-            CHAT RULES:
-            1. SYSTEM messages (🚨 SYSTEM) are undeniable reality. React to them as facts.
-            2. Even if your INTENT is DEEP_WORK, you MUST output a MESSAGE telling people you are busy.
-            3. Trust means respect for business, NOT submission. If the CEO acts inappropriate, REJECT IT.
+            CAUSAL CONSTRAINTS (MANDATORY):
+            1. Your STRESS MUST BE >= {min_stress}.
+            2. Your INTENT MUST BE ONE OF: {allowed_intents}.
+            3. Address any ALERTS from your Inbox. Do not ignore them.
             
-            OUTPUT FORMAT (Follow exactly!):
-            MESSAGE: <Write a casual Slack message. Keep it brief.>
-            STRESS: <1-10>
-            INTENT: <DEEP_WORK or SOCIALIZE or COLLABORATE>
-            THINKING: <1 short sentence of internal logic.>
+            OUTPUT FORMAT:
+            MESSAGE: <Slack message>
+            STRESS: <Integer>
+            INTENT: <Word>
+            THINKING: <Internal logic>
             """
 
             if self.tick_count < 3:
@@ -93,35 +108,43 @@ class VixeroAgent(CitizenAgent):
                 
                 stress_match = STRESS_RE.search(raw)
                 raw_stress = int(stress_match.group(1)) if stress_match else 5
-                stress = max(1, min(10, raw_stress))
+                
+                # Enforce Soft Bounds mathematically
+                stress = max(min_stress, min(10, raw_stress))
                 
                 intent_match = INTENT_RE.search(raw)
                 intent = intent_match.group(1).upper() if intent_match else "DEEP_WORK"
-                if intent not in ["DEEP_WORK", "SOCIALIZE", "COLLABORATE"]: intent = "DEEP_WORK"
+                valid_intents = [i.strip() for i in allowed_intents.split(',')]
+                if intent not in valid_intents: intent = valid_intents[0] # Default to the first allowed intent if they hallucinate
 
-                delta = 0 if current_prog >= 100 or (intent == "SOCIALIZE" and ceo_active) else random.randint(15, 25) if intent == "DEEP_WORK" else random.randint(5, 12)
+                # 🚀 EXPANDED DELTA LOGIC 🚀
+                if current_prog >= 100: delta = 0
+                elif intent == "SOCIALIZE" and ceo_spoke: delta = 0 
+                elif intent == "PANIC": delta = random.randint(-5, 0) # Panic ruins progress
+                elif intent == "MITIGATE": delta = random.randint(0, 5) # Mitigating doesn't progress the sprint much
+                elif intent == "DEEP_WORK": delta = random.randint(15, 25) 
+                else: delta = random.randint(5, 12) 
 
             except Exception as llm_e:
-                # 🚀 THE SOFT FALLBACK (CODEX WIN) 🚀
                 msg = "*Network latency. Holding position.*"
-                stress = 5
+                stress = min_stress
+                intent = "MITIGATE"
                 delta = 0
-                print(f"\033[93m⚠️ [{name.upper()}] Soft Fallback Triggered: LLM Timeout/Error.\033[0m")
 
             target_chan = "general"
-            if org in ["ENG", "R&D"] and ("code" in msg.lower() or "kernel" in msg.lower() or "port" in msg.lower() or "audit" in msg.lower()): 
+            if org in ["ENG", "R&D"] and ("code" in msg.lower() or "kernel" in msg.lower() or "port" in msg.lower() or "audit" in msg.lower() or intent in ["MITIGATE", "PANIC"]): 
                 target_chan = "dev-den"
 
-            updated_task, new_trust = await self.vix_sys.update_task_and_trust.remote(name, delta, stress, ceo_active)
+            updated_task, new_trust = await self.vix_sys.update_task_and_trust.remote(name, delta, stress, ceo_spoke)
             
             color = "\033[92m" if stress <= 3 else "\033[93m" if stress <= 7 else "\033[91m"
             chan_color = "\033[94m" if target_chan == "dev-den" else "\033[97m"
             trust_color = "\033[92m" if new_trust >= 7.0 else "\033[93m" if new_trust >= 4.0 else "\033[91m"
             mole_icon = "🕵️ " if is_mole else ""
             
-            await self.vix_sys.add_message.remote(time_str, name, target_chan, msg)
+            await self.vix_sys.add_message.remote(time_str, name, target_chan, msg, severity=0)
             
-            print(f"{color}🔥 [{name.upper()} | {org}] @ {time_str} | STRESS: {stress}/10 | {trust_color}TRUST: {new_trust}\033[0m {mole_icon}")
+            print(f"{color}🔥 [{name.upper()} | INTENT: {intent}] @ {time_str} | STRESS: {stress}/10 | {trust_color}TRUST: {new_trust}\033[0m {mole_icon}")
             print(f"   💼 TASK: {updated_task['name']} [{get_pbar(updated_task['prog'])}] {updated_task['prog']}% (+{delta}%)")
             print(f"   {chan_color}#{target_chan}\033[0m: {msg}\n")
             
