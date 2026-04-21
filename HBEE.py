@@ -89,7 +89,8 @@ async def main():
                     confirmed_name = await vix_sys.fire_agent.remote(target)
                     if confirmed_name:
                         msg = f"USER {confirmed_name.upper()} HAS BEEN TERMINATED FROM THE NETWORK."
-                        await vix_sys.add_message.remote(time_str, "SYSTEM", "general", msg)
+                        # 🚀 SEVERITY 10: Absolute maximum panic when a coworker is digitally assassinated
+                        await vix_sys.add_message.remote(time_str, "SYSTEM", "general", msg, severity=10)
                         print(f"\n\033[41m\033[97m 💀 SYSTEM OVERRIDE: {confirmed_name.upper()} TERMINATED. \033[0m\n")
                     else:
                         print(f"\n\033[93m ⚠️ ERROR: Agent '{target}' not found. \033[0m\n")
@@ -102,13 +103,15 @@ async def main():
                 elif cmd.lower().startswith("/news "):
                     news = cmd.split(" ", 1)[1].strip()
                     msg = f"BREAKING NEWS: {news.upper()}"
-                    await vix_sys.add_message.remote(time_str, "SYSTEM", "general", msg)
+                    # 🚀 SEVERITY 9: Locks stress to >= 8 and forces PANIC or MITIGATE intents
+                    await vix_sys.add_message.remote(time_str, "SYSTEM", "general", msg, severity=9)
                     print(f"\n\033[43m\033[97m 📰 NEWS INJECTED: {news.upper()} \033[0m\n")
                     
                 elif cmd.lower().startswith("/event "):
                     event = cmd.split(" ", 1)[1].strip()
                     msg = f"OFFICE EVENT: {event.upper()}"
-                    await vix_sys.add_message.remote(time_str, "SYSTEM", "general", msg)
+                    # 🚀 SEVERITY 6: High stress (>= 5), but allows DEEP_WORK to continue
+                    await vix_sys.add_message.remote(time_str, "SYSTEM", "general", msg, severity=6)
                     print(f"\n\033[45m\033[97m 🏢 EVENT INJECTED: {event.upper()} \033[0m\n")
                     
                 else:
@@ -118,7 +121,8 @@ async def main():
                         if parts[0].strip().lower() in ["dev-den", "exec-vault", "general"]:
                             chan = parts[0].strip().lower()
                             cmd = parts[1].strip()
-                    await vix_sys.add_message.remote(time_str, "CEO VIX", chan, cmd)
+                    # 🚀 SEVERITY 0: Normal CEO chatter, but it flags `ceo_spoke = True` in the inbox
+                    await vix_sys.add_message.remote(time_str, "CEO VIX", chan, cmd, severity=0)
                     print(f"\033[96m👑 CEO -> #{chan}: {cmd.upper()}\033[0m\n")
 
             print(f"▶️ Engine Tick {tick + 1}/22...")
