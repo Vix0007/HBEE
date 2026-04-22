@@ -2,9 +2,9 @@ import ray
 import asyncio
 import random
 import traceback
+import re
 from openai import AsyncOpenAI
 from agentsociety import CitizenAgent
-from config import MSG_RE, STRESS_RE, INTENT_RE
 from logger import get_pbar
 
 class VixeroAgent(CitizenAgent):
@@ -84,11 +84,11 @@ class VixeroAgent(CitizenAgent):
             2. Your INTENT MUST BE ONE OF: {allowed_intents}.
             3. Address any ALERTS from your Inbox. Do not ignore them.
             
-            OUTPUT FORMAT:
-            MESSAGE: <Slack message>
-            STRESS: <Integer>
-            INTENT: <Word>
-            THINKING: <Internal logic>
+            OUTPUT FORMAT (You MUST use these exact XML tags):
+            <msg>Write a casual Slack message here. Keep it brief.</msg>
+            <stress>Integer</stress>
+            <intent>Word</intent>
+            <thinking>Internal logic</thinking>
             """
 
             if self.tick_count < 3:
@@ -103,19 +103,31 @@ class VixeroAgent(CitizenAgent):
                 )
                 raw = response.choices[0].message.content or ""
                 
-                msg_match = MSG_RE.search(raw)
-                msg = msg_match.group(1).strip().replace("\"", "") if msg_match and msg_match.group(1).strip() else "*processing telemetry*"
+                # 🚀 TITANIUM PARSER (Handles XML, Markdown, and Legacy formats) 🚀
+                import re
                 
-                stress_match = STRESS_RE.search(raw)
+                # 1. Fuzzy parse Message
+                msg_match = re.search(r"(?:<msg>|MESSAGE:|\*\*MESSAGE:\*\*)\s*(.*?)(?:</msg>|\nSTRESS:|\n<stress>|$)", raw, re.IGNORECASE | re.DOTALL)
+                if msg_match:
+                    # Depending on which regex group matched, extract the text
+                    msg_text = msg_match.group(1) if msg_match.group(1) else ""
+                    msg = msg_text.strip().replace("\"", "")
+                else:
+                    # Absolute fallback: Just take the first sentence they uttered
+                    msg = raw.split("\n")[0][:150].strip().replace("\"", "") + "..."
+                
+                if not msg: msg = "*processing anomaly*"
+                
+                # 2. Fuzzy parse Stress
+                stress_match = re.search(r"(?:<stress>|STRESS:|\*\*STRESS:\*\*)\s*(\d+)", raw, re.IGNORECASE)
                 raw_stress = int(stress_match.group(1)) if stress_match else 5
-                
-                # Enforce Soft Bounds mathematically
                 stress = max(min_stress, min(10, raw_stress))
                 
-                intent_match = INTENT_RE.search(raw)
+                # 3. Fuzzy parse Intent
+                intent_match = re.search(r"(?:<intent>|INTENT:|\*\*INTENT:\*\*)\s*([A-Za-z_]+)", raw, re.IGNORECASE)
                 intent = intent_match.group(1).upper() if intent_match else "DEEP_WORK"
                 valid_intents = [i.strip() for i in allowed_intents.split(',')]
-                if intent not in valid_intents: intent = valid_intents[0] # Default to the first allowed intent if they hallucinate
+                if intent not in valid_intents: intent = valid_intents[0]
 
                 # 🚀 EXPANDED DELTA LOGIC 🚀
                 if current_prog >= 100: delta = 0
