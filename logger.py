@@ -5,9 +5,23 @@ import re
 import atexit
 
 LOG_DIR = "hbee_logs"
+METRICS_DIR = "hbee_metrics"
+
 os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(METRICS_DIR, exist_ok=True)
+
 timestamp = time.strftime("%Y%m%d_%H%M%S")
-LOG_FILENAME = os.path.join(LOG_DIR, f"vixero_sim_v33_modular_{timestamp}.log")
+LOG_FILENAME = os.path.join(LOG_DIR, f"vixero_sim_v34_infinite_{timestamp}.log")
+METRICS_FILENAME = os.path.join(METRICS_DIR, f"vixero_metrics_{timestamp}.csv")
+EDGES_FILENAME = os.path.join(METRICS_DIR, f"vixero_edges_{timestamp}.csv")
+
+# Initialize Node Metrics CSV
+with open(METRICS_FILENAME, "w", encoding="utf-8") as f:
+    f.write("Tick,Time,Agent,Intent,Stress,Trust,TaskProgress,Suspect,IsFallback\n")
+
+# Initialize Graph Edges CSV (Pre-cuGraph)
+with open(EDGES_FILENAME, "w", encoding="utf-8") as f:
+    f.write("Tick,Time,Source,Target,Edge_Type,Weight\n")
 
 class LoggerTee:
     def __init__(self, filename: str):
@@ -18,14 +32,12 @@ class LoggerTee:
 
     def write(self, message: str):
         self.terminal.write(message)
-        # 🚨 THE FIX: Check if file is still open before writing
         if hasattr(self, 'log_file') and not self.log_file.closed:
             clean_message = self.ansi_escape.sub('', message)
             self.log_file.write(clean_message)
 
     def flush(self):
         self.terminal.flush()
-        # 🚨 THE FIX: Check if file is still open before flushing
         if hasattr(self, 'log_file') and not self.log_file.closed:
             self.log_file.flush()
 
@@ -40,7 +52,6 @@ class LoggerTee:
     def fileno(self):
         return self.terminal.fileno()
 
-# Global replacement
 logger_tee = LoggerTee(LOG_FILENAME)
 sys.stdout = logger_tee
 atexit.register(logger_tee.close)

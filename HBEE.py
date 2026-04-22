@@ -33,17 +33,15 @@ class RosterManager:
     def __init__(self):
         self.index = 0
     def get_next(self):
-        # 🚀 SCALABILITY FIX: Dynamically handles roster length 🚀
         p = VIXERO_ROSTER[self.index % len(VIXERO_ROSTER)]
         self.index += 1
         return p
 
 async def main():
-    print(f"\n🏢 🏢 🏢 🏢 🏢  VIXERO HQ: MODULAR ENTERPRISE (V33) 🏢 🏢 🏢 🏢 🏢")
+    print(f"\n🏢 🏢 🏢 🏢 🏢  VIXERO HQ: MODULAR ENTERPRISE (V34 INFINITE) 🏢 🏢 🏢 🏢 🏢")
     print(f"📁 Auto-logging session to: {LOG_FILENAME}")
     print(f"👑 COMMANDS: [text] | /fire [name] | /env [desc] | /news [headline] | /event [desc]\n")
     
-    # 🚀 HEADLESS SERVER GUARD 🚀
     if sys.stdin.isatty():
         threading.Thread(target=ceo_listener, daemon=True).start()
     else:
@@ -56,7 +54,7 @@ async def main():
     vix_sys = ray.get_actor("vixero_system")
     config = SimConfig()
     config.SetLLMRequest(request_type="openai", api_key="EMPTY", model="/home/ubuntu/glm4_flash_int4")
-    config.SetSimulatorRequest(task_name="vix_org_sim", max_day=1, steps_per_simulation_step=1200)
+    config.SetSimulatorRequest(task_name="vix_org_sim", max_day=50, steps_per_simulation_step=1200)
     config.SetMapRequest(file_path=os.path.abspath("vixero_office.pb"))
     config.SetMQTT(server="localhost", port=1883)
 
@@ -68,9 +66,7 @@ async def main():
             p = rm.get_next()
             pos = {"aoi_position": {"aoi_id": p["desk"]}}
             
-            # 🚀 THE BRUTE-FORCE STABILITY FIX (DO NOT TOUCH) 🚀
             eco = {"work_skill": 1.0, "nominal_income": 5000.0, "currency": 1000.0}
-            
             profile = {"org": p["org"], "role": p["role"], **eco}
             base = {"name": p["name"], **eco}
             status = {"home": pos, "work": pos, "attribute": {"gender": 1, "age": 21}, **eco}
@@ -80,11 +76,11 @@ async def main():
         simulation.default_memory_config_func = {VixeroAgent: mem_init}
         await asyncio.sleep(2)
         
-        # 🚀 DYNAMIC AGENT COUNT 🚀
         await simulation.init_agents(agent_count={VixeroAgent: len(VIXERO_ROSTER)}, memory_config_func={VixeroAgent: mem_init})
         
-        for tick in range(22):
-            total_minutes = tick * 30
+        for tick in range(1000):
+            daily_tick = tick % 21
+            total_minutes = daily_tick * 30
             time_str = f"{8 + (total_minutes // 60):02d}:{total_minutes % 60:02d}"
             
             while not ceo_command_queue.empty():
@@ -127,7 +123,7 @@ async def main():
                     await vix_sys.add_message.remote(time_str, "CEO VIX", chan, cmd, severity=0)
                     print(f"\033[96m👑 CEO -> #{chan}: {cmd.upper()}\033[0m\n")
 
-            print(f"▶️ Engine Tick {tick + 1}/22...")
+            print(f"▶️ Engine Tick {tick + 1} (Day Tick {daily_tick}/20)...")
             t_start = time.time()
             
             sec_alert = await vix_sys.trigger_security_sweep.remote(time_str)
@@ -135,6 +131,10 @@ async def main():
                 print(f"\n\033[41m\033[97m 🛡️ #security-logs \033[0m\n\033[91m{sec_alert}\033[0m\n")
             
             await simulation.step()
+            
+            if daily_tick == 20:
+                day_name = await vix_sys.advance_day.remote()
+                print(f"\n\033[44m\033[97m 🌙 THE SUN SETS. NIGHT SHIFT ENGAGED. WAKING UP FOR {day_name.upper()}... \033[0m\n")
             
             for _ in range(15):
                 if not ceo_command_queue.empty(): break 
