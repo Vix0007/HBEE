@@ -12,7 +12,6 @@ class VixeroSystem:
         self.days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
         self.tasks = {p["name"]: [{"name": f"Day {self.day_count} Tasks", "prog": 0}] for p in VIXERO_ROSTER}
         
-        # 🚀 THE LEDGERS 🚀
         self.trust_ledger = {p["name"]: 7.0 for p in VIXERO_ROSTER}
         self.suspicion_matrix = {p["name"].upper(): {t["name"].upper(): 0.0 for t in VIXERO_ROSTER if t["name"] != p["name"]} for p in VIXERO_ROSTER}
         
@@ -23,7 +22,7 @@ class VixeroSystem:
         self.yesterday_summary = "A new week begins at Vixero HQ."
         
         with open(LOG_FILENAME, "a", encoding="utf-8") as f:
-            f.write(f"=== VIXERO HQ SIMULATION V34 (PHASE 1: SUSPICION MATRIX) STARTED ===\n")
+            f.write(f"=== VIXERO HQ SIMULATION V35 (DEFCON 1 CAPABLE) STARTED ===\n")
             f.write(f"Target Mole Identity: [REDACTED]\n\n")
 
     def advance_day(self):
@@ -40,6 +39,7 @@ class VixeroSystem:
             
         self.tasks = {p["name"]: [{"name": f"Day {self.day_count} Tasks", "prog": 0}] for p in VIXERO_ROSTER}
         self.channels = {"general": [], "dev-den": []}
+        self.global_vibe = "Standard corporate day. Fluorescent lights humming." # Reset vibe on new day
         return day_name
 
     def add_message(self, time_str: str, name: str, channel: str, message: str, severity: int = 0):
@@ -54,6 +54,15 @@ class VixeroSystem:
         self.channels[channel].append(formatted)
         if len(self.channels[channel]) > 8: 
             self.channels[channel].pop(0)
+
+        # 🚀 TASK HIJACKING (WAR ROOM PROTOCOL) 🚀
+        if severity >= 8:
+            self.global_vibe = "DEFCON 1. CRITICAL OPERATIONAL CRISIS. STRICT ZERO-TRUST PROTOCOLS ENGAGED."
+            for p in VIXERO_ROSTER:
+                agent_name = p["name"]
+                # Insert impact assessment if it's not already the active task
+                if not self.tasks[agent_name] or self.tasks[agent_name][0]["name"] != "THREAT IMPACT ASSESSMENT":
+                    self.tasks[agent_name].insert(0, {"name": "THREAT IMPACT ASSESSMENT", "prog": 0})
 
         if name == "CEO VIX" or severity > 0:
             for agent_name in self.inboxes.keys():
@@ -80,7 +89,6 @@ class VixeroSystem:
         current_prog = task_list[0]["prog"] if task_list else 100
         day_name = self.days[(self.day_count - 1) % 5]
         
-        # 🚀 EXTRACT ISOLATION THRESHOLDS 🚀
         highly_suspects = [t for t, v in self.suspicion_matrix[name.upper()].items() if v >= 8.0]
         
         return visible, personal_inbox, trust_score, is_mole, is_fired, current_prog, self.global_vibe, self.day_count, day_name, self.yesterday_summary, highly_suspects
@@ -88,15 +96,12 @@ class VixeroSystem:
     def update_task_and_trust(self, name: str, delta: int, stress: int, had_ceo_interaction: bool, suspect: str) -> Tuple[Dict, float]:
         agent_key = name.upper()
         
-        # 🚀 1. Hysteresis (Decay all suspicion slightly every tick) 🚀
         for target in self.suspicion_matrix[agent_key]:
             self.suspicion_matrix[agent_key][target] = max(0.0, self.suspicion_matrix[agent_key][target] - 0.5)
             
-        # 🚀 2. Compound Suspicion 🚀
         if suspect != "NONE" and suspect in self.suspicion_matrix[agent_key]:
             self.suspicion_matrix[agent_key][suspect] = min(10.0, self.suspicion_matrix[agent_key][suspect] + 2.0)
 
-        # Update Task Progress
         task_list = self.tasks.get(name, [])
         if not task_list: 
             active_task = {"name": "Idle", "prog": 100}
@@ -104,7 +109,11 @@ class VixeroSystem:
             task_list[0]["prog"] = min(100, task_list[0]["prog"] + delta)
             active_task = task_list[0]
             
-        # Update Trust
+            # Auto-pop completed hijacked tasks to return to normal work
+            if active_task["prog"] >= 100 and len(task_list) > 1:
+                task_list.pop(0)
+                active_task = task_list[0]
+            
         current_trust = self.trust_ledger.get(name, 7.0)
         if had_ceo_interaction:
             if stress >= 8: current_trust = max(0.0, current_trust - 0.8) 
@@ -113,17 +122,12 @@ class VixeroSystem:
         
         return active_task, self.trust_ledger[name]
 
-    # 🚀 UNIFIED TELEMETRY (Minimizing Ray Overhead) 🚀
     def log_telemetry(self, tick: int, time_str: str, name: str, intent: str, stress: int, trust: float, progress: int, suspect: str, is_fallback: bool):
-        # 1. Write Node Metrics
         with open(METRICS_FILENAME, "a", encoding="utf-8") as f:
             f.write(f"{tick},{time_str},{name},{intent},{stress},{trust},{progress},{suspect},{is_fallback}\n")
             
-        # 2. Write Graph Edges (Pre-cuGraph)
         with open(EDGES_FILENAME, "a", encoding="utf-8") as f:
-            # Trust Edge
             f.write(f"{tick},{time_str},{name},CEO VIX,TRUST,{trust}\n")
-            # Suspicion Edges
             for target, weight in self.suspicion_matrix[name.upper()].items():
                 if weight > 0:
                     f.write(f"{tick},{time_str},{name},{target},SUSPICION,{weight:.1f}\n")

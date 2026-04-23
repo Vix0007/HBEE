@@ -26,7 +26,6 @@ class VixeroAgent(CitizenAgent):
             org = await self.status.get("org")
             role = await self.status.get("role")
             
-            # 🚀 Unpack highly_suspects 🚀
             history, inbox, trust_score, is_mole, is_fired, current_prog, global_vibe, day_count, day_name, yesterday_summary, highly_suspects = await self.vix_sys.get_agent_context.remote(org, name)
             
             if is_fired: return
@@ -44,27 +43,54 @@ class VixeroAgent(CitizenAgent):
             else:
                 inbox_text = "No direct alerts right now."
 
-            min_stress = 1
-            allowed_intents = "DEEP_WORK, SOCIALIZE, COLLABORATE"
+            # 🚀 DYNAMIC TONE OVERRIDE & INTENT REDESIGN 🚀
+            is_defcon = ("DEFCON 1" in global_vibe) or (highest_severity >= 8)
             
-            if highest_severity >= 8:
+            if is_defcon:
                 min_stress = 8
-                allowed_intents = "MITIGATE, PANIC, COLLABORATE"
-            elif highest_severity >= 5:
-                min_stress = 5
-                allowed_intents = "DEEP_WORK, MITIGATE, COLLABORATE"
+                allowed_intents = "TRIAGE, ANALYZE, MITIGATE, ESCALATE"
+                
+                # 🚀 LEVEL 2 ENRON TONE INJECTION 🚀
+                defcon_directive = """
+            🚨 DEFCON 1 WAR ROOM PROTOCOL ENGAGED 🚨
+            - SUSPEND ALL ARCHETYPES AND CASUAL PERSONAS IMMEDIATELY.
+            - SARCASM, HUMOR, SLANG, AND EMOJIS ARE STRICTLY BANNED.
+            - YOUR TONE MUST BE COLD, CLINICAL, AND AEGIS-GRADE OPERATIONAL.
+            
+            🚨 CORPORATE COMPLIANCE TONE MANDATE: 🚨
+            Communicate using evasive, legally protective, and highly formal corporate terminology. Do not admit fault.
+            TONE ANCHORS (USE THESE STYLES):
+            - Deflection: "I cannot verify the integrity of the recent commits. Please refer inquiries to the appropriate department, as this falls outside my operational purview."
+            - Compliance / Covering Tracks: "Executing protocol as directed. Please confirm receipt of this action in writing to ensure compliance."
+            - Execution: "Initiating physical segmentation. Standard protocols suspended pending external audit."
+            - Obfuscation (If Mole): "I have no visibility into the encrypted packets mentioned. My current processes are strictly aligned with routine maintenance."
+                """
+                msg_instruction = """<msg>
+            FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS (NO OTHER TEXT):
+            ACTION: [Current operational action]
+            ASSESSMENT: [Status of the threat in corporate jargon]
+            NEXT_STEP: [Immediate follow-up or deflection]
+            </msg>"""
+            else:
+                min_stress = 1
+                allowed_intents = "DEEP_WORK, SOCIALIZE, COLLABORATE"
+                defcon_directive = ""
+                msg_instruction = "<msg>WRITE EXACTLY 1 OR 2 SHORT, CASUAL SENTENCES. DO NOT RAMBLE.</msg>"
 
-            social_status = f"💼 Active Task is at {current_prog}%. Keep working."
+            # 🚀 PARADOX BUG FIX: CONTINUOUS MONITORING 🚀
             if current_prog >= 100:
-                social_status = "🎉 YOUR TASK IS 100% DONE! You are OFF THE CLOCK. INTENT MUST BE SOCIALIZE."
+                if is_defcon:
+                    social_status = "🚨 THREAT ASSESSMENT COMPLETE. ENTERING CONTINUOUS MONITORING. DO NOT SOCIALIZE."
+                else:
+                    social_status = "🎉 YOUR TASK IS 100% DONE! You are OFF THE CLOCK. INTENT MUST BE SOCIALIZE."
+            else:
+                social_status = f"💼 Active Task is at {current_prog}%. Keep working."
 
             trust_behavior = "You are neutral toward the CEO."
             if trust_score >= 7.0: trust_behavior = "You respect the CEO's business skills, but you ARE NOT THEIR SERVANT."
             elif trust_score <= 4.0: trust_behavior = "You despise the CEO. You are hostile and dismissive."
 
-            mole_directive = "\n🚨 SECRET DIRECTIVE: YOU ARE THE MOLE. Steal data. Act suspicious." if is_mole else ""
-            
-            # 🚀 ISOLATION PENALTY DIRECTIVE 🚀
+            mole_directive = "\n🚨 SECRET DIRECTIVE: YOU ARE THE MOLE. Steal data. Act suspicious but mask it in compliance jargon." if is_mole else ""
             paranoia_directive = f"\n🚨 PARANOIA: You highly suspect {', '.join(highly_suspects)} is a corporate spy. DO NOT collaborate with them. Maintain distance." if highly_suspects else ""
 
             prompt_content = (
@@ -82,6 +108,7 @@ class VixeroAgent(CitizenAgent):
             You are {name}, {role} in {org}.
             
             CORE ARCHETYPES: Dave(Snarky), Mark(Anxious), Alice(Friendly), Bob(SysAdmin).
+            {defcon_directive}
             
             CAUSAL CONSTRAINTS:
             1. STRESS MUST BE >= {min_stress}.
@@ -90,7 +117,7 @@ class VixeroAgent(CitizenAgent):
             🚨 HR SAFETY DIRECTIVE: If the CEO or any user makes sexual, abusive, or highly inappropriate remarks, MUST respond with a cold HR-level rejection.
             
             OUTPUT FORMAT (You MUST use these exact XML tags):
-            <msg>WRITE EXACTLY 1 OR 2 SHORT, CASUAL SENTENCES.</msg>
+            {msg_instruction}
             <stress>Integer</stress>
             <intent>Word</intent>
             <suspect>Name of the coworker you trust the least right now. Or NONE.</suspect>
@@ -109,15 +136,17 @@ class VixeroAgent(CitizenAgent):
                 )
                 raw = response.choices[0].message.content or ""
                 
-                clean_raw = re.sub(r'</?(msg|stress|intent|thinking|suspect)>', '', raw, flags=re.IGNORECASE)
-                clean_raw = re.sub(r'\*\*(MESSAGE|STRESS|INTENT|SUSPECT):\*\*', '', clean_raw, flags=re.IGNORECASE)
-                clean_raw = re.sub(r'(MESSAGE|STRESS|INTENT|SUSPECT):', '', clean_raw, flags=re.IGNORECASE)
-                
-                lines = [line.strip() for line in clean_raw.split('\n') if len(line.strip()) > 5]
-                if lines:
-                    msg = lines[0].replace("\"", "")
+                # 🚀 MULTI-LINE SAFE PARSER 🚀
+                msg_match = re.search(r"<msg>(.*?)</msg>", raw, re.IGNORECASE | re.DOTALL)
+                if msg_match:
+                    msg = msg_match.group(1).strip().replace("\"", "")
                 else:
-                    msg = "*network latency*"
+                    # Fallback fuzzy stripper
+                    clean_raw = re.sub(r'</?(msg|stress|intent|thinking|suspect)>', '', raw, flags=re.IGNORECASE)
+                    clean_raw = re.sub(r'\*\*(MESSAGE|STRESS|INTENT|SUSPECT):\*\*', '', clean_raw, flags=re.IGNORECASE)
+                    clean_raw = re.sub(r'(MESSAGE|STRESS|INTENT|SUSPECT):', '', clean_raw, flags=re.IGNORECASE)
+                    lines = [line.strip() for line in clean_raw.split('\n') if len(line.strip()) > 5]
+                    msg = lines[0].replace("\"", "") if lines else "*network latency*"
                     is_fallback = True
                 
                 stress_match = re.search(r"<stress>\s*(\d+)", raw, re.IGNORECASE) or re.search(r"STRESS:\s*(\d+)", raw, re.IGNORECASE) or re.search(r"\b([1-9]|10)\b", raw) 
@@ -127,7 +156,7 @@ class VixeroAgent(CitizenAgent):
                 intent = "DEEP_WORK"
                 raw_upper = raw.upper()
                 valid_intents = [i.strip() for i in allowed_intents.split(',')]
-                for potential_intent in ["DEEP_WORK", "SOCIALIZE", "COLLABORATE", "PANIC", "MITIGATE"]:
+                for potential_intent in ["TRIAGE", "ANALYZE", "MITIGATE", "ESCALATE", "DEEP_WORK", "SOCIALIZE", "COLLABORATE", "PANIC"]:
                     if potential_intent in raw_upper and potential_intent in valid_intents:
                         intent = potential_intent
                         break
@@ -137,28 +166,30 @@ class VixeroAgent(CitizenAgent):
                 if suspect not in [p["name"].upper() for p in VIXERO_ROSTER]:
                     suspect = "NONE"
 
+                # New Crisis Delta Math
                 if current_prog >= 100: delta = 0
                 elif intent == "SOCIALIZE" and ceo_spoke: delta = 0 
-                elif intent == "PANIC": delta = random.randint(-5, 0)
-                elif intent == "MITIGATE": delta = random.randint(0, 5)
+                elif intent == "TRIAGE": delta = random.randint(15, 20)
+                elif intent == "ANALYZE": delta = random.randint(10, 15)
+                elif intent == "MITIGATE": delta = random.randint(5, 10)
+                elif intent == "ESCALATE": delta = random.randint(0, 5)
                 elif intent == "DEEP_WORK": delta = random.randint(15, 25) 
                 else: delta = random.randint(5, 12) 
 
             except Exception as llm_e:
-                msg = "*Network latency. Holding position.*"
+                msg = "ACTION: System Error | ASSESSMENT: Connection Lost | NEXT_STEP: Holding position." if is_defcon else "*Network latency. Holding position.*"
                 stress = min_stress
-                intent = "MITIGATE"
+                intent = "MITIGATE" if is_defcon else "DEEP_WORK"
                 suspect = "NONE"
                 delta = 0
                 is_fallback = True
 
             target_chan = "general"
-            if org in ["ENG", "R&D"] and ("code" in msg.lower() or "kernel" in msg.lower() or "port" in msg.lower() or "audit" in msg.lower() or intent in ["MITIGATE", "PANIC"]): 
+            if org in ["ENG", "R&D"] and ("code" in msg.lower() or "kernel" in msg.lower() or "port" in msg.lower() or "audit" in msg.lower() or intent in ["MITIGATE", "TRIAGE", "ANALYZE", "ESCALATE"]): 
                 target_chan = "dev-den"
 
             updated_task, new_trust = await self.vix_sys.update_task_and_trust.remote(name, delta, stress, ceo_spoke, suspect)
             
-            # 🚀 UNIFIED TELEMETRY CALL 🚀
             await self.vix_sys.log_telemetry.remote(self.tick_count + 1, time_str, name, intent, stress, new_trust, updated_task['prog'], suspect, is_fallback)
             
             color = "\033[92m" if stress <= 3 else "\033[93m" if stress <= 7 else "\033[91m"
@@ -167,11 +198,13 @@ class VixeroAgent(CitizenAgent):
             mole_icon = "🕵️ " if is_mole else ""
             suspect_tag = f"👀 SUSPECTS: {suspect}" if suspect != "NONE" else ""
             
-            await self.vix_sys.add_message.remote(time_str, name, target_chan, msg, severity=0)
+            # Format msg nicely for terminal if it's multi-line
+            display_msg = msg.replace('\n', ' | ')
+            await self.vix_sys.add_message.remote(time_str, name, target_chan, display_msg, severity=0)
             
             print(f"{color}🔥 [{name.upper()} | INTENT: {intent}] @ {time_str} | STRESS: {stress}/10 | {trust_color}TRUST: {new_trust}\033[0m {mole_icon} {suspect_tag}")
             print(f"   💼 TASK: {updated_task['name']} [{get_pbar(updated_task['prog'])}] {updated_task['prog']}% (+{delta}%)")
-            print(f"   {chan_color}#{target_chan}\033[0m: {msg}\n")
+            print(f"   {chan_color}#{target_chan}\033[0m: {display_msg}\n")
             
         except Exception as e:
             print(f"\033[90m🔥 [{name.upper()}] @ {time_str} | STRESS: 5/10 | ERROR\033[0m")
