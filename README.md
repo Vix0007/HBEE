@@ -8,54 +8,45 @@
 [![GitHub](https://img.shields.io/badge/GitHub-Vix0007-181717?style=flat&logo=github)](https://github.com/Vix0007)
 [![Website](https://img.shields.io/badge/Web-vixdev.cloud-0066CC?style=flat&logo=cloudflare)](https://vixdev.cloud)
 
-*Vixero Technology Enterprise · Kuching, Sarawak, Malaysia*
+</div>
 
+<div align="center">
+  <img src="assets/banner.png" alt="Vixero Tech" />
 </div>
 
 # HBEE — Human Behavioral Entropy Engine
 
 > *"Malware doesn't just compromise systems. It propagates through people."*
 
-**HBEE** is a sociotechnical security simulation framework that models the human behavioral layer of enterprise network breaches. It simulates a realistic corporate environment — complete with office social dynamics, stress responses, and authentic human entropy — to study how malware propagates not just through networks, but through *organizations*.
+**Predictive insider threat intelligence via sociotechnical simulation.**
 
-HBEE is the research companion to [AEGIS](https://arxiv.org/abs/2604.02149), a thermodynamic network intrusion detection system. Where AEGIS detects the *network physics* of adversarial traffic, HBEE generates the *human context* that surrounds a real breach.
+AEGIS catches the network anomaly after the attack begins. HBEE catches the human signal *before* it. The wager: insider threats, social engineering compromises, and coordinated breaches have *behavioral precursors* — trust decay, stress divergence, off-pattern communication, group polarization. If you can simulate an organization accurately enough, then inject real-world events at their historical timestamps, those precursors become *measurable*.
 
----
-
-## The Problem
-
-Modern cybersecurity sandboxes are fake. Sophisticated malware — particularly sandbox-aware and autonomous variants — detects the absence of genuine human activity and goes dormant. A sandbox with no gossip, no stress, no one clicking the wrong link at 2PM because they just got a passive-aggressive email from HR, is not a convincing enterprise environment.
-
-Existing simulation frameworks model either:
-- **Network behavior** (packet flows, lateral movement, C2 beaconing), or
-- **Human behavior** (social dynamics, organizational psychology)
-
-Nobody has modeled both simultaneously in the same environment. That gap is what HBEE fills.
+HBEE is the open-source research companion to a three-layer sociotechnical defense stack. This repository is the behavioral simulation layer only.
 
 ---
 
-## What HBEE Does
+## The Stack
 
-HBEE simulates a realistic corporate environment with **150 agents** across departments (R&D, Engineering, Operations), each with:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  HBEE   →  who is the threat      (behavioral prediction)   │  ← this repo
+│  AEGIS  →  what they're doing     (network physics)         │     proprietary
+│  V      →  autonomous response    (perimeter + isolation)   │     proprietary
+└─────────────────────────────────────────────────────────────┘
+```
 
-- **Persistent emotional states** — Dave is still angry at 2PM if he was angry at 9AM
-- **Stress tracking** — deadlines, interpersonal conflict, and environmental stressors compound over time
-- **Social graph** — trust scores, clique formation, communication patterns
-- **Authentic behavioral entropy** — agents use mock internet, slack each other, form opinions
-
-Adversarial events are injected — zero-day deployment, social engineering attacks, insider threats, network breaches — and HBEE measures how they propagate through the human layer before, during, and after detection.
+HBEE is open. AEGIS and V are closed. The methodology is public; the validated corpora and trained models are not. *Research is open. Production is sovereign.*
 
 ---
 
-## Why This Matters for Security
+## The Thesis
 
-**The Human Entropy Horizon** — AEGIS V3 identifies a fundamental detection limit: flow-based thermodynamic detection cannot distinguish between a direct human connection and a perfectly mimicked human proxy. This means adversaries who operate at human speeds approach invisibility.
+Traditional intrusion detection reads packets and flows. It is reactive by construction. By the time the network anomaly is legible, the breach has already begun.
 
-HBEE exists to study this horizon from the inside. By generating ground-truth behavioral data during a breach scenario, HBEE provides:
+Insider threats and advanced social engineering attacks don't start on the wire. They start in a person — a stressed engineer, a disgruntled admin, a finance lead whose email patterns shift three weeks before they exfiltrate. That signal has been documented retrospectively in every major incident from Enron to SolarWinds. **Nobody has built the system to detect it prospectively.**
 
-1. **Authentic entropy corpus** for training next-generation detectors (PELT — AEGIS V4)
-2. **Behavioral signatures** of insider threats, compromised endpoints, and social engineering
-3. **Blast radius modeling** — given a breach point, which agents are affected and how fast
+HBEE is a bet that you can. Not by surveilling employees — by simulating them honestly enough that the trajectory of a real organization becomes measurable against the trajectory of a synthetic one.
 
 ---
 
@@ -79,50 +70,133 @@ HBEE exists to study this horizon from the inside. By generating ground-truth be
 └─────────────────────────────────────────────────┘
 ```
 
-**Why GLM-4.7?** GLM-4.7's Preserved Thinking and Interleaved Thinking modes maintain emotional and cognitive state continuity across multi-turn simulation ticks natively — without external state management hacks. If Dave is frustrated at tick 3, he is still frustrated at tick 7. This is the core requirement for authentic behavioral simulation and the primary reason GLM-4.7 was chosen over alternatives.
+**Why GLM-4.7?** Preserved Thinking and Interleaved Thinking modes maintain emotional and cognitive state continuity across multi-turn simulation ticks natively — no external state management hacks. If Dave is frustrated at tick 3, he is still frustrated at tick 7 without being told to be. That is the core requirement for authentic behavioral simulation, and the primary reason GLM-4.7 was chosen over alternatives.
+
+---
+
+## What HBEE Does (Today)
+
+Phase 1 — April 2026.
+
+- Simulates a 150-agent corporate environment across R&D, Engineering, and Operations
+- Each agent carries: persistent emotional state, compounding stress, trust scores toward every other agent, position in a weighted social graph
+- Agents act on 20-minute ticks: slack each other, browse a mock intranet, form opinions, react to internal and external events
+- Event injection infrastructure: arbitrary events can be scheduled at specific ticks — org announcements, CVE disclosures, news items, internal incidents
+- Per-tick logging of behavioral entropy, trust deltas, communication graphs
+
+What Phase 1 is **not**: a detector, a classifier, or a validated prediction system. It is the substrate. The research question — *can behavioral collapse be predicted from public-data-only inputs* — is Phase 3.
+
+---
+
+## Validation Methodology (Research North Star)
+
+The only defensible test for a predictive behavioral system is **retroactive** — run the simulation against a historical incident using only the information that was publicly available at the time, and measure whether the system's risk trajectory for the eventual actor diverged from baseline *before* the documented attack.
+
+**Planned evaluation incidents:**
+
+| incident | year | archetype |
+|----------|------|-----------|
+| Enron | 2001 | financial fraud + cultural collapse |
+| SolarWinds | 2020 | supply-chain + insider precursors |
+| Uber | 2022 | social engineering + credential theft |
+
+**Methodological constraints (non-negotiable):**
+
+- **Timestamp-gating**: every injected event must be provably sourced from a document dated before the event's injection tick. Any data leakage from retrospective analyses voids the run.
+- **Public-data-only**: no internal company documents, no post-hoc reporting, no interviews. Only the news, filings, and disclosures that were public at that date.
+- **Pre-registered signal**: the "behavioral collapse" signal — what counts as a hit — must be defined and published *before* the validation is run, not fitted after.
+- **Null runs**: same methodology against matched organizations that did *not* experience the incident, to establish false-positive baseline.
+
+The target claim takes the form: *"HBEE flagged N agents in the trajectory cone of behavioral collapse K days before network-observable anomaly, using only timestamp-gated public data, at false positive rate F."*
+
+We have not made that claim. This document describes the system being built to find out whether the claim is defensible.
+
+---
+
+## Why This Matters
+
+**The Human Entropy Horizon.** AEGIS V3 identifies a fundamental detection limit: flow-based thermodynamic detection cannot distinguish between a direct human connection and a perfectly mimicked human proxy. Adversaries operating at human speeds approach invisibility on the network.
+
+HBEE attacks the same horizon from the other side. If the network signal is ambiguous, the organizational signal that *precedes* it may not be. A compromised endpoint doesn't need to be distinguished from a human at the packet level if the human at the keyboard was already behaviorally off-pattern three days earlier.
+
+This is not surveillance. Real organizations deploy HBEE against simulated versions of themselves and measure the delta. The production signal is *divergence from the simulation*, not the employees directly.
 
 ---
 
 ## Research Context
 
 HBEE sits at the intersection of:
-- **Multi-agent social simulation** (prior work: Smallville, AgentSociety)
-- **Sociotechnical systems security** (largely uncrowded academic niche)
-- **Adversarial corpus generation** for ML-based intrusion detection
 
-The nearest prior work is Stanford's Smallville (Park et al., 2023) — 25 agents in a social environment. HBEE extends this to a **security-instrumented corporate simulation** with adversarial event injection, stress metrics, trust scoring, and ground-truth breach propagation logging.
+- **Multi-agent social simulation** — prior work: Smallville (Park et al., 2023, 25 agents), AgentSociety (Tsinghua FIB Lab)
+- **Sociotechnical systems security** — largely uncrowded academic niche
+- **Organizational psychology of insider threat** — Shaw & Fischer (CERT), Greitzer, Band
+- **Adversarial corpus generation** — for ML-based intrusion detection
 
-**Target venues:** USENIX Security 2027, IEEE S&P
+Nearest prior work is Stanford's Smallville. HBEE extends that paradigm in three directions: **scale** (6× agent count), **instrumentation** (security-grade behavioral logging), and **adversarial eventing** (ground-truth breach propagation traces). The insider-threat-psychology layer and the retroactive validation methodology have no direct prior.
+
+**Target venues:** USENIX Security, IEEE S&P, NDSS.
 
 ---
 
-## Connection to AEGIS
+## Roadmap
 
-```
-AEGIS (V3)          HBEE                    PELT (V4)
-Network physics  +  Human behavioral  →     Adaptive
-thermodynamic       entropy corpus           detector
-detection           generation               training
-```
+| phase | scope | status |
+|-------|-------|--------|
+| 1 | Simulation substrate, agent persistence, event injection | ✅ active |
+| 2 | Retroactive event pipeline, timestamp-gated data feed | 🔧 in design |
+| 3 | Historical incident validation (Enron, SolarWinds, Uber) | 🎯 research north star |
+| 4 | Behavioral signature extraction → network labels → PELT bridge | 🔭 future |
+| 5 | Sovereign ASEAN pilot deployments | 🔭 future |
 
-HBEE generates what AEGIS cannot see: the human layer. Together they close the detection gap that nation-state adversaries currently exploit.
+Phase 4 is the eventual bridge to the AEGIS successor (PELT). HBEE does not generate PCAP. It generates *labels* — which agents, at which times, were on pre-attack trajectories — that a future detector can train against. That bridge is not built and is not a Phase 1–3 commitment.
 
-- AEGIS paper: [arXiv:2604.02149](https://arxiv.org/abs/2604.02149)
-- Dataset: [Vix0007/AEGIS-Adversarial-Corpus](https://huggingface.co/datasets/Vix0007/AEGIS-Adversarial-Corpus)
+---
+
+## What's Open and What Isn't
+
+| layer | status | why |
+|-------|--------|-----|
+| HBEE framework | **open source** | research methodology must be reproducible |
+| Simulation code + agent architecture | **open source** | see above |
+| Validated behavioral corpora (post Phase 3) | **gated / commercial** | the corpus is the moat |
+| Trained signature models | **proprietary** | weights reflect corpus investment |
+| AEGIS detector (V3) | **proprietary** | production defensive system |
+| V autonomous response layer | **proprietary** | production defensive system |
+| AEGIS paper | **public** | [arXiv:2604.02149](https://arxiv.org/abs/2604.02149) |
+
+Open sourcing HBEE accelerates the research. Keeping the corpus and trained weights gated preserves the asset. Standard separation.
 
 ---
 
 ## Status
 
 > **Phase 1 — Active** (April 2026)
-> Stable simulation environment. Agents running. Trust scoring, stress tracking, and adversarial event injection operational.
+> Simulation environment stable. 150 agents running. Trust scoring, stress propagation, social graph analytics, and event injection infrastructure present and operating. Retroactive validation pipeline (Phase 2) in design.
+
+---
+
+## Citing
+
+If you use or reference HBEE in research:
+
+```bibtex
+@software{ferrel_hbee_2026,
+  author  = {Ferrel, Vickson},
+  title   = {HBEE: Human Behavioral Entropy Engine},
+  year    = {2026},
+  url     = {https://github.com/Vix0007/HBEE},
+  note    = {Sociotechnical simulation framework for predictive insider threat intelligence}
+}
+```
+
+AEGIS (the network-physics companion): [arXiv:2604.02149](https://arxiv.org/abs/2604.02149)
 
 ---
 
 ## Author
 
 **Vickson Ferrel** | Founder, Vixero Technology Enterprise
-Universiti Malaysia Sarawak (UNIMAS) | arXiv Researcher | NVIDIA Inception Member
+Universiti Malaysia Sarawak (UNIMAS) · arXiv Researcher · NVIDIA Inception Member
 
 - arXiv: [2604.02149](https://arxiv.org/abs/2604.02149)
 - HuggingFace: [Vix0007](https://huggingface.co/Vix0007)
@@ -130,4 +204,10 @@ Universiti Malaysia Sarawak (UNIMAS) | arXiv Researcher | NVIDIA Inception Membe
 
 ---
 
-*For Humanity, From Humanity. 🇲🇾*
+<div align="center">
+
+*Vixero Technology Enterprise · Kuching, Sarawak, Malaysia*
+
+*For Humanity, From Humanity.* 🇲🇾
+
+</div>
